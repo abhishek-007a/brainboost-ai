@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>BrainBoost AI</title>
+
+    <script>
+
+window.APP_DATA = {
+
+    hasNotes:
+        "{{ 'true' if notes_part else 'false' }}" === "true",
+
+    hasFlash:
+        "{{ 'true' if flashcards_part else 'false' }}" === "true",
+
+    hasMap:
+        "{{ 'true' if map_part else 'false' }}" === "true"
+};
+
+</script>
+
+    <!-- VIS NETWORK -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <!-- FONT -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<form method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+
+<div class="workspace-grid">
+
+    <!-- LEFT -->
+    <div class="left-panel">
+
+        <div class="brand">
+            <h1>🧠 BrainBoost AI</h1>
+            <p>Intelligent study companion.</p>
+        </div>
+
+        <div>
+            <div class="section-label" style="margin-bottom:12px;">Knowledge Source</div>
+
+            <div class="file-upload-wrapper">
+                <input type="file" name="file">
+            </div>
+        </div>
+
+        {% if tokens_remaining is defined %}
+        <div class="token-card">
+
+            <div class="section-label">
+                Usage Balance
+            </div>
+
+            <div class="token-value">
+                {{ "{:,}".format(tokens_remaining) }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div>
+
+            <div class="section-label" style="margin-bottom:12px;">
+                Study Tools
+            </div>
+
+            <div class="tool-buttons">
+
+                <button
+                    type="submit"
+                    name="mode"
+                    value="notes"
+                    class="tool-btn {{ 'active-btn' if notes_part }}"
+                >
+                    📄 Summary
+                </button>
+
+                <button
+                    type="submit"
+                    name="mode"
+                    value="flashcards"
+                    class="tool-btn {{ 'active-btn' if flashcards_part }}"
+                >
+                    🧠 Cards
+                </button>
+
+                <button
+                    type="submit"
+                    name="mode"
+                    value="map"
+                    class="tool-btn {{ 'active-btn' if map_part }}"
+                >
+                    🗺️ Map
+                </button>
+
+            </div>
+        </div>
+
+        <div class="section-label">
+            Notebook Editor
+        </div>
+
+        <textarea
+            name="notes"
+            placeholder="Paste lecture notes or transcripts here to begin..."
+        >{{ full_content }}</textarea>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-panel">
+
+        <div id="loading">
+            ⏳ BrainBoost generating...
+        </div>
+
+        <!-- SUMMARY -->
+        <div
+            id="notes-view"
+            class="output-viewport hidden"
+        >
+
+            <div class="content-card">
+
+                <h2>📄 Executive Summary</h2>
+
+                <div id="summary-content" class="summary-content">
+{{ notes_part }}
+</div>
+
+            </div>
+
+        </div>
+
+        <!-- FLASHCARDS -->
+        <div
+            id="flash-view"
+            class="output-viewport hidden"
+        >
+
+            <div class="flashcard-grid">
+
+                {% if flashcards_part %}
+
+                    {% set lines = flashcards_part.split('\n') %}
+                    {% set ns = namespace(q='') %}
+
+                    {% for line in lines %}
+
+                        {% set clean = line.replace('**','').strip() %}
+
+                        {% if clean.lower().startswith('q:') %}
+
+                            {% set ns.q = clean.split(':',1)[1].strip() %}
+
+                        {% elif clean.lower().startswith('a:') and ns.q %}
+
+                            <div
+                                class="flashcard"
+                                onclick="toggleAnswer(this)"
+                            >
+
+                                <strong>{{ ns.q }}</strong>
+
+                                <div class="answer">
+                                    {{ clean.split(':',1)[1].strip() }}
+                                </div>
+
+                            </div>
+
+                            {% set ns.q = '' %}
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <!-- MAP -->
+        <div id="map-view" class="hidden">
+
+            <div class="map-header">
+
+                <button
+                    type="button"
+                    class="action-btn"
+                    onclick="expandAllNodes()"
+                >
+                    Expand All
+                </button>
+
+                <button
+                    type="button"
+                    class="action-btn"
+                    onclick="downloadMindMap()"
+                >
+                    ⬇ Download Map
+                </button>
+
+            </div>
+
+            <div id="network"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</form>
+
+<!-- RAW MAP -->
+<div id="raw-map-data" style="display:none;">
+{{ map_part }}
+</div>
+
+<!-- JS -->
+<script
+    src="{{ url_for('static', filename='js/script.js') }}"
+></script>
+
+</body>
+</html>
