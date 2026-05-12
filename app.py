@@ -7,18 +7,16 @@ from dotenv import load_dotenv
 from groq import Groq
 from supabase import create_client
 
-# =========================
-# 🔑 LOAD ENV
-# =========================
 
+# LOAD ENV
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "brainboost-secret-key"
 
-# =========================
-# 🔑 API CONFIG
-# =========================
+
+# API CONFIG
+
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -34,9 +32,9 @@ supabase = create_client(
 
 MODEL_ID = "llama-3.1-8b-instant"
 
-# =========================
-# 📊 TOKEN TRACKING
-# =========================
+
+# TOKEN TRACKING
+
 
 DAILY_TOKEN_LIMIT = 500000
 
@@ -80,9 +78,8 @@ def update_usage(user_id, tokens):
     return new_total
 
 
-# =========================
-# 📄 EXTRACT TEXT
-# =========================
+
+# EXTRACT TEXT
 
 def extract_text(file):
 
@@ -110,18 +107,16 @@ def extract_text(file):
     return text.strip()
 
 
-# =========================
-# 🔑 GENERATE HASH
-# =========================
+
+# GENERATE HASH
 
 def generate_hash(text):
 
     return hashlib.md5(text.encode()).hexdigest()
 
 
-# =========================
-# 🤖 GROQ REQUEST
-# =========================
+
+# GROQ REQUEST
 
 def ask_groq(prompt, tokens=1000):
 
@@ -158,17 +153,15 @@ def ask_groq(prompt, tokens=1000):
         }
 
 
-# =========================
-# 🏠 MAIN ROUTE
-# =========================
+
+# MAIN ROUTE
 
 @app.route("/", methods=["GET", "POST"])
 def index():
 
-    # =========================
-    # 👤 USER SESSION
-    # =========================
-
+    
+    # USER SESSION
+    
     if "user_id" not in session:
         session["user_id"] = str(uuid.uuid4())
 
@@ -188,10 +181,9 @@ def index():
         mode = request.form.get("mode")
         file = request.files.get("file")
 
-        # =========================
-        # 📥 INPUT
-        # =========================
-
+        
+        # INPUT
+        
         if file and file.filename != "":
             text = extract_text(file)
 
@@ -207,18 +199,15 @@ def index():
                 notes_part="⚠️ Please provide text."
             )
 
-        # 🔥 limit for speed
+        # limit for speed
         process_text = text[:8000]
 
-        # =========================
-        # 🔑 HASH
-        # =========================
-
+        
+        # HASH
         note_hash = generate_hash(process_text)
 
-        # =====================================================
-        # 📄 SUMMARY
-        # =====================================================
+       
+        # SUMMARY
 
         if mode == "notes":
 
@@ -287,9 +276,8 @@ TEXT:
 
                 print("✅ Summary saved")
 
-        # =====================================================
-        # 🧠 FLASHCARDS
-        # =====================================================
+       
+        # FLASHCARDS     
 
         elif mode == "flashcards":
 
@@ -356,10 +344,8 @@ TEXT:
 
                 print("✅ Flashcards saved")
 
-        # =====================================================
-        # 🗺️ MIND MAP
-        # =====================================================
 
+        # MIND MAP
         elif mode == "map":
 
             map_check = supabase.table("notes") \
@@ -432,10 +418,9 @@ TEXT:
 
                 print("✅ Mindmap saved")
 
-        # =========================
-        # 📊 UPDATE TOKENS
-        # =========================
-
+        
+        # UPDATE TOKENS
+        
         total_used_today = update_usage(
             user_id,
             last_request_tokens
@@ -454,9 +439,8 @@ TEXT:
     )
 
 
-# =========================
-# 🚀 RUN
-# =========================
+
+# RUN
 
 if __name__ == "__main__":
     app.run(debug=True)
